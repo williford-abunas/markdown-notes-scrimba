@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useState } from 'react'
 import Sidebar from './components/Sidebar.tsx'
 import Editor from './components/Editor.tsx'
 import Split from 'react-split'
 import { nanoid } from 'nanoid'
+import 'react-mde/lib/styles/css/react-mde-all.css'
 
 interface Note {
   id: string
@@ -11,10 +12,17 @@ interface Note {
 }
 
 function App() {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [currentNoteId, setCurrentNoteId] = useState(
+  const [notes, setNotes] = useState<Note[]>(
+    () => JSON.parse(localStorage.getItem('notes') as string) || []
+  )
+
+  const [currentNoteId, setCurrentNoteId] = useState<string>(
     (notes[0] && notes[0].id) || ''
   )
+
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes))
+  }, [notes])
 
   //Create new note - defaults to newNote object
   function createNewNote() {
@@ -28,13 +36,15 @@ function App() {
   }
 
   function updateNote(text: string) {
-    setNotes((oldNotes) =>
-      oldNotes.map((oldNote) => {
-        return oldNote.id === currentNoteId
-          ? { ...oldNote, body: text }
-          : oldNote
-      })
-    )
+    setNotes((oldNotes) => {
+      const newArray: Note[] = []
+      for (const note of oldNotes) {
+        note.id === currentNoteId
+          ? newArray.unshift({ ...note, body: text })
+          : newArray.push(note)
+      }
+      return newArray
+    })
   }
 
   function findCurrentNote() {
