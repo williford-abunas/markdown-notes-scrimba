@@ -2,14 +2,13 @@ import React from 'react'
 
 interface Note {
   id: string
-  body: string
 }
 interface Props {
   notes: Note[]
-  currentNote: Note
+  currentNote?: Note
   setCurrentNoteId: (noteId: string | null) => void
   newNote: React.MouseEventHandler<HTMLButtonElement> | undefined
-  deleteNote: (event: { stopPropagation: () => void }, noteId: string) => void
+  deleteNote: (noteId: string) => void
 }
 
 const Sidebar = (props: Props) => {
@@ -29,7 +28,7 @@ const Sidebar = (props: Props) => {
         <h4 className="text-snippet">{note.body.split('\n')[0]}</h4>
         <button
           className="delete-btn"
-          onClick={(event) => props.deleteNote(event, note.id)}
+          onClick={() => props.deleteNote(note.id)}
         >
           <i className="gg-trash trash-icon"></i>
         </button>

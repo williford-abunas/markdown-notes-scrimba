@@ -3,60 +3,64 @@ import { useState } from 'react'
 import Sidebar from './components/Sidebar.tsx'
 import Editor from './components/Editor.tsx'
 import Split from 'react-split'
-import { nanoid } from 'nanoid'
 import 'react-mde/lib/styles/css/react-mde-all.css'
-import { onSnapshot } from 'firebase/firestore'
+import { onSnapshot, addDoc, doc, deleteDoc, setDoc } from 'firebase/firestore'
+import { notesCollection, db } from './firebase.js'
 
 interface Note {
   id: string
-  body: string
 }
 
 function App() {
-  const [notes, setNotes] = useState<Note[]>(
-    () => JSON.parse(localStorage.getItem('notes') as string) || []
-  )
+  const [notes, setNotes] = useState<Note[]>([])
 
-  const [currentNoteId, setCurrentNoteId] = useState<string | null>(
-    notes.length > 0 ? notes[0].id : null
-  )
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>('')
 
   const currentNote = notes.find((note) => note.id === currentNoteId || null)
 
   useEffect(() => {
-    localStorage.setItem('notes', JSON.stringify(notes))
+    const unsubscribe = onSnapshot(
+      notesCollection,
+      function (snapshot: { docs: any[] }) {
+        const notesArr = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }))
+        setNotes(notesArr)
+      }
+    )
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    if (notes.length > 0) {
+      setCurrentNoteId(notes[0].id)
+    }
   }, [notes])
 
   //Create new note - defaults to newNote object
-  function createNewNote() {
+  async function createNewNote() {
     const newNote = {
-      id: nanoid(),
       body: "# Type your markdown note's title here",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     }
 
-    setNotes((prevNotes) => [newNote, ...prevNotes])
-    setCurrentNoteId(newNote.id)
+    const newNoteRef = await addDoc(notesCollection, newNote)
+    setCurrentNoteId(newNoteRef.id)
   }
 
-  function updateNote(text: string) {
-    setNotes((oldNotes) => {
-      const newArray: Note[] = []
-      for (const note of oldNotes) {
-        note.id === currentNoteId
-          ? newArray.unshift({ ...note, body: text })
-          : newArray.push(note)
-      }
-      return newArray
-    })
+  async function updateNote(text: string) {
+    if (!currentNoteId) {
+      return
+    }
+    const docRef = doc(db, 'notes', currentNoteId)
+    await setDoc(docRef, { body: text, updatedAt: Date.now() }, { merge: true })
   }
 
-  function deleteNote(
-    event: { stopPropagation: () => void },
-    noteId: string
-  ): void {
-    event.stopPropagation()
-
-    setNotes((oldNotes) => oldNotes.filter((note) => note.id !== noteId))
+  async function deleteNote(noteId: string) {
+    const docRef = doc(db, 'notes', noteId)
+    await deleteDoc(docRef)
   }
 
   return (
@@ -70,9 +74,8 @@ function App() {
             newNote={createNewNote}
             deleteNote={deleteNote}
           />
-          {currentNoteId && notes.length > 0 && (
-            <Editor currentNote={currentNote} upDateNote={updateNote} />
-          )}
+
+          <Editor currentNote={currentNote} upDateNote={updateNote} />
         </Split>
       ) : (
         <div className="no-notes">
