@@ -5,6 +5,7 @@ import Editor from './components/Editor.tsx'
 import Split from 'react-split'
 import { nanoid } from 'nanoid'
 import 'react-mde/lib/styles/css/react-mde-all.css'
+import { onSnapshot } from 'firebase/firestore'
 
 interface Note {
   id: string
@@ -16,9 +17,11 @@ function App() {
     () => JSON.parse(localStorage.getItem('notes') as string) || []
   )
 
-  const [currentNoteId, setCurrentNoteId] = useState<string>(
-    (notes[0] && notes[0].id) || ''
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(
+    notes.length > 0 ? notes[0].id : null
   )
+
+  const currentNote = notes.find((note) => note.id === currentNoteId || null)
 
   useEffect(() => {
     localStorage.setItem('notes', JSON.stringify(notes))
@@ -47,18 +50,13 @@ function App() {
     })
   }
 
-  function deleteNote(event: { stopPropagation: () => void }, noteId: string) {
+  function deleteNote(
+    event: { stopPropagation: () => void },
+    noteId: string
+  ): void {
     event.stopPropagation()
 
     setNotes((oldNotes) => oldNotes.filter((note) => note.id !== noteId))
-  }
-
-  function findCurrentNote() {
-    return (
-      notes.find((note) => {
-        return note.id === currentNoteId
-      }) || notes[0]
-    )
   }
 
   return (
@@ -67,13 +65,13 @@ function App() {
         <Split sizes={[30, 70]} direction="horizontal" className="split">
           <Sidebar
             notes={notes}
-            currentNote={findCurrentNote()}
+            currentNote={currentNote}
             setCurrentNoteId={setCurrentNoteId}
             newNote={createNewNote}
             deleteNote={deleteNote}
           />
           {currentNoteId && notes.length > 0 && (
-            <Editor currentNote={findCurrentNote()} upDateNote={updateNote} />
+            <Editor currentNote={currentNote} upDateNote={updateNote} />
           )}
         </Split>
       ) : (
