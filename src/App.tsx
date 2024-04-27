@@ -47,6 +47,12 @@ function App() {
     })
   }
 
+  function deleteNote(event: { stopPropagation: () => void }, noteId: string) {
+    event.stopPropagation()
+
+    setNotes((oldNotes) => oldNotes.filter((note) => note.id !== noteId))
+  }
+
   function findCurrentNote() {
     return (
       notes.find((note) => {
@@ -64,6 +70,7 @@ function App() {
             currentNote={findCurrentNote()}
             setCurrentNoteId={setCurrentNoteId}
             newNote={createNewNote}
+            deleteNote={deleteNote}
           />
           {currentNoteId && notes.length > 0 && (
             <Editor currentNote={findCurrentNote()} upDateNote={updateNote} />
