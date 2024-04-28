@@ -1,6 +1,7 @@
 import React from 'react'
 
 interface Note {
+  body: any
   id: string
 }
 interface Props {
@@ -12,7 +13,7 @@ interface Props {
 }
 
 const Sidebar = (props: Props) => {
-  const noteElements = props.notes.map((note: Note) => (
+  const noteElements = props.notes.map((note) => (
     <div key={note.id}>
       <div
         className={`title ${
@@ -21,7 +22,7 @@ const Sidebar = (props: Props) => {
             : ''
         }`}
         onClick={() => {
-          console.log('clicked', note.id, props.currentNote.id)
+          console.log('clicked', note.id, props.currentNote?.id)
           props.setCurrentNoteId(note.id)
         }}
       >

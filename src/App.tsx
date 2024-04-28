@@ -8,15 +8,20 @@ import { onSnapshot, addDoc, doc, deleteDoc, setDoc } from 'firebase/firestore'
 import { notesCollection, db } from './firebase.js'
 
 interface Note {
+  updatedAt: any
   id: string
+  body: string
 }
 
 function App() {
+  //states
   const [notes, setNotes] = useState<Note[]>([])
-
   const [currentNoteId, setCurrentNoteId] = useState<string | null>('')
+  const [tempNoteText, setTempNoteText] = useState<string>('')
 
+  //derived
   const currentNote = notes.find((note) => note.id === currentNoteId || null)
+  const sortedNotes = notes.sort((a, b) => b.updatedAt - a.updatedAt)
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -38,7 +43,21 @@ function App() {
     }
   }, [notes])
 
-  //Create new note - defaults to newNote object
+  useEffect(() => {
+    if (currentNote) {
+      setTempNoteText(currentNote.body)
+    }
+  }, [currentNote])
+
+  useEffect(() => {
+    const timeOutId = setTimeout(() => {
+      if (tempNoteText !== currentNote?.body) {
+        updateNote(tempNoteText)
+      }
+    }, 500)
+    return () => clearTimeout(timeOutId)
+  }, [tempNoteText])
+
   async function createNewNote() {
     const newNote = {
       body: "# Type your markdown note's title here",
@@ -68,14 +87,17 @@ function App() {
       {notes.length > 0 ? (
         <Split sizes={[30, 70]} direction="horizontal" className="split">
           <Sidebar
-            notes={notes}
+            notes={sortedNotes}
             currentNote={currentNote}
             setCurrentNoteId={setCurrentNoteId}
             newNote={createNewNote}
             deleteNote={deleteNote}
           />
 
-          <Editor currentNote={currentNote} upDateNote={updateNote} />
+          <Editor
+            tempNoteText={tempNoteText}
+            setTempNoteText={setTempNoteText}
+          />
         </Split>
       ) : (
         <div className="no-notes">
