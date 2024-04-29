@@ -6,6 +6,9 @@ import Split from 'react-split'
 import 'react-mde/lib/styles/css/react-mde-all.css'
 import { onSnapshot, addDoc, doc, deleteDoc, setDoc } from 'firebase/firestore'
 import { notesCollection, db } from './firebase.js'
+import { tailspin } from 'ldrs'
+
+tailspin.register()
 
 interface Note {
   updatedAt: any
@@ -18,6 +21,7 @@ function App() {
   const [notes, setNotes] = useState<Note[]>([])
   const [currentNoteId, setCurrentNoteId] = useState<string | null>('')
   const [tempNoteText, setTempNoteText] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   //derived
   const currentNote = notes.find((note) => note.id === currentNoteId || null)
@@ -32,6 +36,7 @@ function App() {
           id: doc.id,
         }))
         setNotes(notesArr)
+        setIsLoading(false)
       }
     )
     return unsubscribe
@@ -84,7 +89,14 @@ function App() {
 
   return (
     <main>
-      {notes.length > 0 ? (
+      {isLoading ? (
+        <l-tailspin
+          size="50"
+          stroke="5"
+          speed="0.9"
+          color="#4a4e74"
+        ></l-tailspin>
+      ) : notes.length > 0 ? (
         <Split sizes={[30, 70]} direction="horizontal" className="split">
           <Sidebar
             notes={sortedNotes}
